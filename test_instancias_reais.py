@@ -18,19 +18,19 @@ def output(instancia, cost, values):
     writer.writerow([instancia, cost])
 
 #Teste com instancias reais
-instancia = 'c4.2xlarge' #mude a instância aqui
+instancia = 'c4.2xlarge' #change the instance here
 
 demand = preProcessamento(instancia)
 
 t = len(demand)
 
 #Preco de 13/10/2022
-p_od = 0.398
+p_od = 0.398 #on demand value
 
 #Partial upfront 1 year
 p_re = 0.242 #effective hourly rate
-u = 0
-y = 8760 #1 year
+u = 0 #upfront price
+y = 8760 #reserve duration (1 year)
 
 result = otimizaModelo(t, demand, p_od, p_re, u, y)
 cost = result[0]
