@@ -12,10 +12,11 @@ def output(instancia, cost, values):
     writer.writerow(['instancia', 'total_cost'])
     writer.writerow([instancia, cost])
     
+    values.insert(0, instancia)
+
     output = open('resultValues.csv', 'w')
     writer = csv.writer(output)
     writer.writerow(values)
-    writer.writerow([instancia, cost])
 
 #Teste com instancias reais
 instancia = 'c4.2xlarge' #change the instance here
