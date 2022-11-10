@@ -4,7 +4,7 @@ In AWS EC2, there are several market options for buying cloud instances, each on
 For running a simulation, you should run the file *test_instancias_reais.py*, changing the name of the instance and the market values. The demand values come from the file *TOTAL_demand.csv* and it can be changed (but it needs to be a csv file in the same format). The simulation output is composed of the following files:
   - *info.txt*, with the input data used in the simulation;
   - *resultCost.csv*, with the total cost;
-  - *resultValues.csv*, with the values of active instances and new instances reserved for each time frame.
+  - *resultValues.csv*, with the values of active instances and new instances reserved for each time frame;
   - *total_purchases.csv*, with the same values of *resultValues.csv* in a more organized form.
 
 Currently, the model is only simulating one instance at the time and for the on demand and one reserve market.
