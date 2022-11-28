@@ -62,18 +62,19 @@ def constraint2(lp, t, values): #y muda p cada mercado!
 
     for i in range(t): # para cada t
         coefficients_end = [0, 0] * num_markets * (t - i - 1)
-        for j in range(len(values)): #para cada mercado
+        for j in range(num_markets): #para cada mercado
             coefficients_start = []
-            coefficients_middle = [0, 0] * j + [1, -1] + [0, 0] * (len(values) - j - 1)
+            coefficients_middle = [0, 0] * j + [1, -1] + [0, 0] * (num_markets - j - 1)
             
             duracao_re = values[j][2] - 1
             
             for k in range(i-1, -1, -1):
                 if (duracao_re > 0):
-                    coefficients_start = [0, 0] * j + [0, -1] + [0, 0] * (len(values) - j - 1) + coefficients_start
+                    coefficients_start = [0, 0] * j + [0, -1] + [0, 0] * (num_markets - j - 1) + coefficients_start
                     duracao_re -= 1
                 else:
-                    coefficients_start = [0, 0] * num_markets + coefficients_start
+                    coefficients_start = [0, 0] * num_markets * (k + 1) + coefficients_start
+                    break
             
             coefficients = coefficients_start + coefficients_middle + coefficients_end
             ret = lpsolve('add_constraint', lp, coefficients, '=', 0)
