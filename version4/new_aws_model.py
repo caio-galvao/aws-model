@@ -1,14 +1,16 @@
 from lpsolve55 import *
 lpsolve()
+import copy
 
 #Model for optimizing instance selection in aws ec2
-#Considering two markets (on demand and reserve) during a t period of time
 
 # instance_values = [[[p_hr, p_up, y], [p_hr, p_up, y]], i = 0 
 #                    [[p_hr, p_up, y], [p_hr, p_up, y]]] i = 1
 # demand = [[1, 2, ...], t=0
 #           [1, 2, ...], t=1
 #           [1, 2, ...]] t=2
+
+#Todas as instâncias com o mesmo número de mercados
 
 def otimizaModelo(t, demand, input):
     lp = lpsolve('make_lp', 0, 4 * t)
@@ -49,19 +51,43 @@ def otimizaModelo(t, demand, input):
 
     return((round(obj), var))
 
-def constraint1(lp, t, demand, input):
-    coefficients = []
-    for i_tempo in t:
-        coef_tempo = []
-        for instancia in input:
-            coef_instancia = []
-            for mercado in instancia:
-                coef_mercado = []
-        
-        ret = lpsolve('add_constraint', lp, coefficients, '>=', demand[i][j]) #Tomar cuidado com forma de entrada de demanda
+def constraint1(lp, demand, coefficientsBase):
+    for i_tempo in range(len(coefficientsBase)):
+        tempo = coefficientsBase[i_tempo]
+        for i_instancia in range(len(tempo)):
+            coefficients = copy.deepcopy(coefficientsBase) #fazendo uma cópia antes de alterar os coeficientes
+            for mercado in coefficients[i_tempo][i_instancia]:
+                mercado[0] = 1
+            ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '>=', demand[i_tempo][i_instancia])
 
-def constraint2(lp): #y muda p cada mercado!
-    ret = lpsolve('add_constraint', lp, coefficients, '=', 0)
+def constraint2(lp, coefficientsBase):
+    for i_tempo in range(len(coefficientsBase)):
+        tempo = coefficientsBase[i_tempo]
+        for i_instancia in range(len(tempo)):
+            instancia = coefficientsBase[i_instancia]
+            for i_mercado in range(len(instancia)):
+                coefficients = copy.deepcopy(coefficientsBase)
+
+                coefficients[i_tempo][i_instancia][i_mercado] = [1, -1]
+                #pegar y do mercado
+                #loop pegando Ts passados
+
+                ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '=', 0)
+
+
+def criarListaBaseCoefficients(t, num_instancias, num_mercados): #[[[[0,0], [0,0]], [[0,0], [0,0]]], [[[0,0], [0,0]], [[0,0], [0,0]]]] para t=2, i=2 e m=2
+    coefficients = []
+    for i_tempo in range(t):
+        coef_tempo = []
+        for i_instancia in range(num_instancias):
+            coef_instancia = []
+            for i_mercado in range(num_mercados):
+                coef_mercado = [0, 0]
+                coef_instancia.append(coef_mercado)
+            coef_tempo.append(coef_instancia)
+        coefficients.append(coef_tempo)
+    
+    return coefficients
 
 def transformaEmArray(lista):
     array = []
