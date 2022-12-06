@@ -20,31 +20,38 @@ def dividirLista(lista, n):
     for i in range(0, len(lista), n):
         yield lista[i:i + n]
 
-input_data = pd.read_csv('input.csv')
-instances = input_data['instance'].value_counts()
+raw_input = pd.read_csv('input.csv')
+instances = raw_input['instance'].value_counts()
 
-totalDemand = pd.read_csv('TOTAL_demand.csv')
+raw_demand = pd.read_csv('TOTAL_demand.csv')
 
 resultCost = open('resultCost.csv', 'w')
 writerCost = csv.writer(resultCost)
-writerCost.writerow(['instance', 'total_cost'])
+writerCost.writerow(['total_cost'])
+
+input_data = []
+total_demand = []
 
 for instance in instances.index:
     instance_input = []
-    market_names = []
+    #market_names = []
 
-    for i in range(len(input_data)):
-        line = input_data.iloc[i]
+    for i in range(len(raw_input)):
+        line = raw_input.iloc[i]
         if line['instance'] == instance:
             instance_input.append([line['p_hr'],line['p_up'], line['y']])
-            market_names.append(line['market_name'])
+            #market_names.append(line['market_name'])
+    input_data.append(instance_input)
 
-    demand = totalDemand[instance].values.tolist()
-    t = len(demand)
+    instance_demand = raw_demand[instance].values.tolist()
+    total_demand.append(instance_demand)
 
-    result = otimizaModelo(t, demand, instance_input)
-    cost = result[0]
-    values = result[1]
+    #createTotalPurchases(instance, values, market_names) ver dps como criar o total purchases
 
-    writerCost.writerow([instance, cost])
-    createTotalPurchases(instance, values, market_names)
+t = len(total_demand[0])
+
+result = otimizaModelo(t, total_demand, input_data)
+cost = result[0]
+values = result[1]
+
+writerCost.writerow([cost])

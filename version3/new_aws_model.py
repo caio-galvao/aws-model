@@ -7,7 +7,9 @@ lpsolve()
 # values = [[p_hr, p_up, y], [p_hr, p_up, y], [p_hr, p_up, y]]
 
 def otimizaModelo(t, demand, values):
-    lp = lpsolve('make_lp', 0, 4 * t)
+    num_markets = len(values)
+
+    lp = lpsolve('make_lp', 0, num_markets * 2 * t)
     lpsolve('set_verbose', lp, 'IMPORTANT')
 
     obj = []
@@ -25,7 +27,7 @@ def otimizaModelo(t, demand, values):
 
     #Adding constraints
     #Demand <= 1*a
-    constraint1(lp, t, demand, len(values))
+    constraint1(lp, t, demand, num_markets)
     # a_t = sum(r_t)
     constraint2(lp, t, values)
     
