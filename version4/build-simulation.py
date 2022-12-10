@@ -2,20 +2,28 @@ import csv
 import pandas as pd
 from new_aws_model import otimizaModelo
 
-def createTotalPurchases(raw_values, t, instance_names, market_names):
+def outputInstances(raw_values, t, instance_names, market_names, input_data, writerCost):
     values = tranformarEmLista(raw_values, t, len(instance_names), len(market_names))
 
     for i_instancia in range(len(instance_names)):
+        cost = 0
+
         output = open('total_purchases_' + instance_names[i_instancia] + '.csv', 'w')
         writer = csv.writer(output)
         writer.writerow(['instanceType', 'market', 'count_active', 'count_reserves'])
         
         for i_mercado in range(len(market_names)):
+            im_values = input_data[i_instancia][i_mercado]
+            cr_im = im_values[0] * im_values[2] + im_values[1]
+
             for i_tempo in range(t):
                 activ = values[i_tempo][i_instancia][i_mercado][0]
                 reserves = values[i_tempo][i_instancia][i_mercado][1]
                 writer.writerow([instance_names[i_instancia], market_names[i_mercado], activ, reserves])
-        
+
+                cost += reserves * cr_im
+
+        writerCost.writerow([instance_names[i_instancia], cost])        
         output.close()
 
 def tranformarEmLista(values, t, num_instances, num_markets):
@@ -39,7 +47,7 @@ raw_demand = pd.read_csv('TOTAL_demand.csv')
 
 resultCost = open('resultCost.csv', 'w')
 writerCost = csv.writer(resultCost)
-writerCost.writerow(['total_cost'])
+writerCost.writerow(['instance','total_cost'])
 
 input_data = []
 total_demand = []
@@ -60,12 +68,12 @@ for instance in instances.index:
     instance_demand = raw_demand[instance].values.tolist()
     total_demand.append(instance_demand)
 
-    #createTotalPurchases(instance, values, market_names) ver dps como criar o total purchases
-
 t = len(total_demand[0])
 
 result = otimizaModelo(t, total_demand, input_data)
 cost = result[0]
-createTotalPurchases(result[1], t, instance_names, market_names)
 
-writerCost.writerow([cost])
+writerCost.writerow(['all', cost])
+
+outputInstances(result[1], t, instance_names, market_names, input_data, writerCost)
+
