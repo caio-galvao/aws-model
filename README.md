@@ -28,4 +28,4 @@ The problem is modeled as a Linear Programming problem and solved using LpSolve 
 - Consider saving plans.
 
 ## Credits
-This work is a part of an undergraduate reseach project by Computer Science student Caio Ribeiro Galvão, in UFCG, Brazil. 
+This work is a part of an undergraduate research project by Computer Science student Caio Ribeiro Galvão, in UFCG, Brazil. 
