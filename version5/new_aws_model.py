@@ -12,16 +12,26 @@ import copy
 
 #Todas as instâncias com o mesmo número de mercados (e mercados iguais)
 
+# Formato das equações:
+# Lista de T -> Lista de I -> Lista de M
+# 1° elemento de cada T: [[s_t, rs_t]]
+# 1° elemento de cada I: [a_t,i,sp]
+
+# [[s_t, rs_t], 
+# [[a_t,i,sp], [a_t,i,m, r_t,i,m], [a_t,i,m, r_t,i,m]], i=0
+# [[a_t,i,sp], [a_t,i,m, r_t,i,m], [a_t,i,m, r_t,i,m]]], i=1
+# [... t=1
+
 def otimizaModelo(t, demand, input_data):
     num_markets = len(input_data[0])
     num_instances = len(input_data)
     lp = lpsolve('make_lp', 0, num_markets * num_instances * 2 * t)
     lpsolve('set_verbose', lp, 'IMPORTANT')
 
-    obj_func = [0, 1 * y_sp] #coeficientes do savings plan (0 * s_t + 1 * rs_t)
+    obj_func = [0, 1 * y_sp] #coeficientes do savings plan (0 * s_t + 1 * rs_t * y_sp) - considera o custo total da reserva no início
 
     for instancia in input_data:
-        obj_func.append(0) #coefficiente de num_instancias ativas em savings plans (a_t,i,SP)
+        obj_func.append(0) #coefficiente de num_instancias ativas em savings plans (a_t,i,sp)
         for mercado in instancia: #mercado = [p_hr, p_up, y]
             cr_im = mercado[0] * mercado[2] + mercado[1]
             obj_func.append(0) #a_im * 0
@@ -30,12 +40,14 @@ def otimizaModelo(t, demand, input_data):
     #Objective function
     ret = lpsolve('set_obj_fn', lp, obj_func * t)
 
-    coefficientesBase = criarListaBaseCoefficients(t, num_instances, num_markets)
+    coefficientsBase = criarListaBaseCoefficients(t, num_instances, num_markets)
     #Adding constraints
     #Demand <= 1*a
-    constraint1(lp, demand, coefficientesBase)
+    constraint1(lp, demand, coefficientsBase)
     # a_t = sum(r_t)
-    constraint2(lp, coefficientesBase, input_data)
+    constraint2(lp, coefficientsBase, input_data)
+    constraint3(lp, coefficientsBase, precosSP)
+    constraint4(lp, coefficientsBase, y_sp)
     
     setInt(lp, 4 * t)
     ret = lpsolve('write_lp', lp, 'a.lp')
@@ -67,9 +79,9 @@ def constraint1(lp, demand, coefficientsBase):
 def constraint2(lp, coefficientsBase, input_data):
     for i_tempo in range(len(coefficientsBase)):
         tempo = coefficientsBase[i_tempo]
-        for i_instancia in range(len(tempo)):
+        for i_instancia in range(1, len(tempo)): #pula os coef do SP
             instancia = tempo[i_instancia]
-            for i_mercado in range(len(instancia)):
+            for i_mercado in range(1, len(instancia)): #pula o merc SP
                 coefficients = copy.deepcopy(coefficientsBase) #fazendo uma cópia antes de alterar os coeficientes
 
                 coefficients[i_tempo][i_instancia][i_mercado] = [1, -1]
@@ -85,17 +97,32 @@ def constraint2(lp, coefficientsBase, input_data):
 
                 ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '=', 0)
 
-def constraint3(lp, coefficientsBase):
+def constraint3(lp, coefficientsBase, precosSP):
     for i_tempo in range(len(coefficientsBase)):
         coefficients = copy.deepcopy(coefficientsBase)
 
-        coefficients[i_tempo][0][0] = [] #como expressar o s_t >= ... , já que s_t é uma variável e não uma constante
+        coefficients[i_tempo][0][0] = [-1, 0]
+
+        for i_instancia in range(1, len(coefficients[i_tempo])): #pula os coef do SP
+            coefficients[i_tempo][i_instancia][0] = [precosSP[i_instancia]]
+
+        ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '<=', 0) #pode ser <= 0?
+
+
+def constraint4(lp, coefficientsBase, y_sp):
+    for i_tempo in range(len(coefficientsBase)):
+        coefficients = copy.deepcopy(coefficientsBase) #fazendo uma cópia antes de alterar os coeficientes
+
+        coefficients[i_tempo][0][0] = [1, -1]
+
+        duracao_re = y_sp - 1
+        for i in range(i_tempo - 1, -1, -1):
+            if duracao_re > 0:
+                coefficients[i][0][0] = [0, -1]
+                duracao_re -= 1
+            else: break
 
         ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '=', 0)
-
-
-def constraint4(lp, coefficientsBase):
-    ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '=', 0)
 
 
 def criarListaBaseCoefficients(t, num_instancias, num_mercados): #[[[[0,0], [0,0]], [[0,0], [0,0]]], [[[0,0], [0,0]], [[0,0], [0,0]]]] para t=2, i=2 e m=2
