@@ -6,6 +6,8 @@ import copy
 
 # instance_values = [[[p_hr, p_up, y], [p_hr, p_up, y]], i = 0 
 #                    [[p_hr, p_up, y], [p_hr, p_up, y]]] i = 1
+# the first market in every instance is the savings plan market.
+#
 # demand = [[1, 2, ...], i=0
 #           [1, 2, ...], i=1
 #           [1, 2, ...]] i=2
@@ -17,15 +19,17 @@ import copy
 # 1° elemento de cada T: [[s_t, rs_t]]
 # 1° elemento de cada I: [a_t,i,sp]
 
-# [[s_t, rs_t], 
+# [[[s_t, rs_t]], 
 # [[a_t,i,sp], [a_t,i,m, r_t,i,m], [a_t,i,m, r_t,i,m]], i=0
 # [[a_t,i,sp], [a_t,i,m, r_t,i,m], [a_t,i,m, r_t,i,m]]], i=1
 # [... t=1
 
-def otimizaModelo(t, demand, input_data):
+# input_sp = [p_sp_i0, p_sp_i1, p_sp_i2, ...]
+
+def otimizaModelo(t, demand, input_data, input_SP, y_sp):
     num_markets = len(input_data[0])
     num_instances = len(input_data)
-    lp = lpsolve('make_lp', 0, num_markets * num_instances * 2 * t)
+    lp = lpsolve('make_lp', 0, ((2 * num_markets + 1) * num_instances + 2) * t)
     lpsolve('set_verbose', lp, 'IMPORTANT')
 
     obj_func = [0, 1 * y_sp] #coeficientes do savings plan (0 * s_t + 1 * rs_t * y_sp) - considera o custo total da reserva no início
@@ -46,7 +50,7 @@ def otimizaModelo(t, demand, input_data):
     constraint1(lp, demand, coefficientsBase)
     # a_t = sum(r_t)
     constraint2(lp, coefficientsBase, input_data)
-    constraint3(lp, coefficientsBase, precosSP)
+    constraint3(lp, coefficientsBase, input_SP)
     constraint4(lp, coefficientsBase, y_sp)
     
     setInt(lp, 4 * t)
@@ -74,7 +78,7 @@ def constraint1(lp, demand, coefficientsBase):
             coefficients[i_tempo][i_instancia][0] = [1] # 1 * a_t,i,SP
             for i_mercado in range(1, len(coefficients[i_tempo][i_instancia])): #pula o merc SP
                 coefficients[i_tempo][i_instancia][i_mercado] = [1,0]
-            ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '>=', demand[i_instancia][i_tempo])
+            ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '>=', demand[i_instancia - 1][i_tempo])
 
 def constraint2(lp, coefficientsBase, input_data):
     for i_tempo in range(len(coefficientsBase)):
@@ -86,7 +90,7 @@ def constraint2(lp, coefficientsBase, input_data):
 
                 coefficients[i_tempo][i_instancia][i_mercado] = [1, -1]
                 
-                y = input_data[i_instancia][i_mercado][2]
+                y = input_data[i_instancia - 1][i_mercado - 1][2]
                 duracao_re = y - 1
 
                 for i in range(i_tempo - 1, -1, -1):
@@ -97,14 +101,14 @@ def constraint2(lp, coefficientsBase, input_data):
 
                 ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '=', 0)
 
-def constraint3(lp, coefficientsBase, precosSP):
+def constraint3(lp, coefficientsBase, input_SP):
     for i_tempo in range(len(coefficientsBase)):
         coefficients = copy.deepcopy(coefficientsBase)
 
         coefficients[i_tempo][0][0] = [-1, 0]
 
         for i_instancia in range(1, len(coefficients[i_tempo])): #pula os coef do SP
-            coefficients[i_tempo][i_instancia][0] = [precosSP[i_instancia]]
+            coefficients[i_tempo][i_instancia][0] = [input_SP[i_instancia - 1]]
 
         ret = lpsolve('add_constraint', lp, transformaEmArray(coefficients), '<=', 0) #pode ser <= 0?
 
