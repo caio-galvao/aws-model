@@ -52,7 +52,7 @@ def otimizaModelo(t, demand, input_data, input_SP, y_sp):
     constraint1(solver, x, num_vars, demand, coefficientsBase)
     # a_t = sum(r_t)
     constraint2(solver, x, num_vars, coefficientsBase, input_data)
-    #constraint3(solver, x, num_vars, coefficientsBase, input_SP)
+    constraint3(solver, x, num_vars, coefficientsBase, input_SP)
     constraint4(solver, x, num_vars, coefficientsBase, y_sp)
 
     obj_func = [0, 1 * y_sp] #coeficientes do savings plan (0 * s_t + 1 * rs_t * y_sp) - considera o custo total da reserva no início
@@ -123,10 +123,10 @@ def constraint3(solver, x, num_vars,coefficientsBase, input_SP):
     for i_tempo in range(len(coefficientsBase)):
         coefficients = copy.deepcopy(coefficientsBase)
 
-        coefficients[i_tempo][0][0] = [-1, 0]
+        coefficients[i_tempo][0][0] = [-1, 0] #valor total ativo de sp em t
 
         for i_instancia in range(1, len(coefficients[i_tempo])): #pula os coef do SP
-            coefficients[i_tempo][i_instancia][0] = [input_SP[i_instancia - 1]]
+            coefficients[i_tempo][i_instancia][0][0] = int([input_SP[i_instancia - 1]][0])
         
         constraint_expr = converteCoeficientes(transformaEmArray(coefficients), x, num_vars)
         solver.Add(sum(constraint_expr) <= 0)
