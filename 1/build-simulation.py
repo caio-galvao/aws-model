@@ -109,11 +109,11 @@ for instance in instances.index:
 t = len(total_demand[0])
 y_sp = (raw_sp_input.iloc[0])['y']
 
-otimizaModelo(t, total_demand, input_data, input_sp, y_sp)
-#cost = result[0]
-#values = tranformarEmLista(result[1], t, len(instance_names), len(market_names))
+result = otimizaModelo(t, total_demand, input_data, input_sp, y_sp)
+cost = result[0]
+values = tranformarEmLista(result[1], t, len(instance_names), len(market_names))
 
-#writerCost.writerow(['all', cost])
+writerCost.writerow(['all', cost])
 
-#outputSavingsPlan(values, t, y_sp, writerCost)
-#outputInstances(values, t, instance_names, market_names, input_data, writerCost)
+outputSavingsPlan(values, t, y_sp, writerCost)
+outputInstances(values, t, instance_names, market_names, input_data, writerCost)

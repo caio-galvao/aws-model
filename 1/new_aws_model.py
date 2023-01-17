@@ -74,13 +74,18 @@ def otimizaModelo(t, demand, input_data, input_SP, y_sp):
     status = solver.Solve()
 
     if status == pywraplp.Solver.OPTIMAL:
+        values = []
+
         print('Objective value =', solver.Objective().Value())
         for j in range(num_vars):
             print(x[j].name(), ' = ', x[j].solution_value())
+            values.append(x[j].solution_value())
         print()
         print('Problem solved in %f milliseconds' % solver.wall_time())
         print('Problem solved in %d iterations' % solver.iterations())
         print('Problem solved in %d branch-and-bound nodes' % solver.nodes())
+
+        return [solver.Objective().Value(), values]
     else:
         print('The problem does not have an optimal solution.')
 
@@ -126,7 +131,7 @@ def constraint3(solver, x, num_vars,coefficientsBase, input_SP):
         coefficients[i_tempo][0][0] = [-1, 0] #valor total ativo de sp em t
 
         for i_instancia in range(1, len(coefficients[i_tempo])): #pula os coef do SP
-            coefficients[i_tempo][i_instancia][0][0] = int([input_SP[i_instancia - 1]][0])
+            coefficients[i_tempo][i_instancia][0][0] = float([input_SP[i_instancia - 1]][0])
         
         constraint_expr = converteCoeficientes(transformaEmArray(coefficients), x, num_vars)
         solver.Add(sum(constraint_expr) <= 0)
